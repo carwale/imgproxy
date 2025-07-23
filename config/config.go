@@ -251,7 +251,7 @@ func Reset() {
 	MediaPathPrefixes = []string{"media/", "dev/media/", "staging/media/"}
 
 	MaxSrcResolution = 2073600 // 1920x1080
-	MaxMediaSrcResolution = 39 // 39000000, we're multiplying it by 1000000 in the setter
+	MaxMediaSrcResolution = 50 // 50000000, we're multiplying it by 1000000 in the setter
 	MaxSrcFileSize = 0
 	MaxAnimationFrames = 100
 	MaxAnimationFrameResolution = 0
