@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -36,6 +37,18 @@ var (
 	processingSem *semaphore.Weighted
 
 	headerVaryValue string
+)
+
+func envOrDefault(key, def string) string {
+    if v := strings.TrimSpace(os.Getenv(key)); v != "" {
+        return v
+    }
+    return def
+}
+
+var (
+    originalBucket = envOrDefault("IMGPROXY_ORIGINAL_BUCKET", "m-aeplimages")
+    masterBucket   = envOrDefault("IMGPROXY_MASTER_BUCKET",   "m-aeplimagesmaster-v2")
 )
 
 func initProcessingHandler() {
@@ -298,7 +311,12 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 			checkErr(ctx, "download", err)
 		}
 
-		return imagedata.Download(ctx, fmt.Sprintf("s3://m-aeplimagesmaster-v2/%s", imageURL), "source image", downloadOpts, po.SecurityOptions)
+		log.WithFields(log.Fields{
+			"original_bucket": originalBucket,
+			"master_bucket":   masterBucket,
+		}).Info("S3 buckets configured")
+
+		return imagedata.Download(ctx, fmt.Sprintf("s3://%s/%s", masterBucket, imageURL), "source image", downloadOpts, po.SecurityOptions)
 	}()
 
 	if err != nil {
@@ -457,7 +475,7 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 			CookieJar: nil,
 		}
 
-		return imagedata.Download(ctx, fmt.Sprintf("s3://m-aeplimages/%s", imageURL), "source image", downloadOpts, po.SecurityOptions)
+		return imagedata.Download(ctx, fmt.Sprintf("s3://%s/%s", originalBucket, imageURL), "source image", downloadOpts, po.SecurityOptions)
 	}()
 
 	
@@ -478,7 +496,7 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 
 	checkErr(ctx, "processing", err)
 
-	err = imagedata.Upload(ctx, fmt.Sprintf("s3://m-aeplimagesmaster-v2/%s", imageURL), "master image", resultData)
+	err = imagedata.Upload(ctx, fmt.Sprintf("s3://%s/%s", masterBucket, imageURL), "master image", resultData)
 
 
 	return resultData, err
