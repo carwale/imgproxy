@@ -81,6 +81,10 @@ func (r *Router) GET(prefix string, handler RouteHandler, exact bool) {
 	r.Add(http.MethodGet, prefix, handler, exact)
 }
 
+func (r *Router) PUT(prefix string, handler RouteHandler, exact bool) {
+	r.Add(http.MethodPut, prefix, handler, exact)
+}
+
 func (r *Router) OPTIONS(prefix string, handler RouteHandler, exact bool) {
 	r.Add(http.MethodOptions, prefix, handler, exact)
 }

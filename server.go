@@ -28,6 +28,7 @@ func buildRouter() *router.Router {
 	r.GET("/", handleLanding, true)
 	r.GET("", handleLanding, true)
 
+	r.PUT("/admin/master/refresh", withMetrics(withPanicHandler(withCORS(handleRefreshMaster))), false)
 	r.GET("/", withMetrics(withPanicHandler(withCORS(withSecret(handleProcessing)))), false)
 
 	r.HEAD("/", withCORS(handleHead), false)
@@ -103,7 +104,7 @@ func withCORS(h router.RouteHandler) router.RouteHandler {
 	return func(reqID string, rw http.ResponseWriter, r *http.Request) {
 		if len(config.AllowOrigin) > 0 {
 			rw.Header().Set("Access-Control-Allow-Origin", config.AllowOrigin)
-			rw.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
+			rw.Header().Set("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
 		}
 
 		h(reqID, rw, r)
