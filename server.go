@@ -104,7 +104,7 @@ func withCORS(h router.RouteHandler) router.RouteHandler {
 	return func(reqID string, rw http.ResponseWriter, r *http.Request) {
 		if len(config.AllowOrigin) > 0 {
 			rw.Header().Set("Access-Control-Allow-Origin", config.AllowOrigin)
-			rw.Header().Set("Access-Control-Allow-Methods", "GET, PUT, OPTIONS")
+			rw.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
 		}
 
 		h(reqID, rw, r)

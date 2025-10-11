@@ -28,7 +28,7 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 
-// PUT /admin/master/refresh?path=<original-object-key-or-imgproxy-path>
+// GET /admin/master/refresh?path=<original-object-key-or-imgproxy-path>
 func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) {
 
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
@@ -76,7 +76,6 @@ func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) 
 	resp := refreshResp{
 		Status:      "updated",
 		Path:        path,
-		MasterKey:   normalized,
 		Format:      format,
 		Width:       wStr,
 		Height:      hStr,

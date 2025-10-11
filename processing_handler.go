@@ -311,11 +311,6 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 			checkErr(ctx, "download", err)
 		}
 
-		log.WithFields(log.Fields{
-			"original_bucket": originalBucket,
-			"master_bucket":   masterBucket,
-		}).Info("S3 buckets configured")
-
 		return imagedata.Download(ctx, fmt.Sprintf("s3://%s/%s", masterBucket, imageURL), "source image", downloadOpts, po.SecurityOptions)
 	}()
 
