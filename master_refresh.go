@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -14,14 +15,8 @@ import (
 
 const masterRefreshTimeout = 60 * time.Second
 
-type refreshResp struct {
-	Status      string `json:"status"`       // "updated"
-	Path        string `json:"path"`         // input path as you passed it
-	Format      string `json:"format"`       // e.g. "avif", "jpeg"
-	Width       string `json:"width"`        // X-Result-Width
-	Height      string `json:"height"`       // X-Result-Height
-	Bytes       int    `json:"bytes"`        // processed bytes length
-	ProcessedAt string `json:"processed_at"` // RFC3339
+type refreshRequest struct {
+	Path string `json:"path"`
 }
 
 func writeJSON(w http.ResponseWriter, code int, v any) {
@@ -32,12 +27,26 @@ func writeJSON(w http.ResponseWriter, code int, v any) {
 	}
 }
 
-// GET /master/refresh?path=<original-object-key-or-imgproxy-path>
+// POST /master/refresh with payload {"path":"<original-object-key-or-imgproxy-path>"}
 func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) {
 
-	path := strings.TrimSpace(r.URL.Query().Get("path"))
+	defer r.Body.Close()
+
+	var payload refreshRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		if errors.Is(err, io.EOF) {
+			log.Warn("master refresh payload missing 'path'")
+		} else {
+			log.WithError(err).Warn("failed to decode master refresh payload")
+		}
+		writeJSON(rw, http.StatusBadRequest, false)
+		return
+	}
+
+	path := strings.TrimSpace(payload.Path)
 	if path == "" {
-		writeJSON(rw, http.StatusBadRequest, map[string]string{"error": "query param 'path' is required"})
+		log.Warn("master refresh request missing 'path'")
+		writeJSON(rw, http.StatusBadRequest, false)
 		return
 	}
 
@@ -49,7 +58,7 @@ func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) 
 	ctx := r.Context()
 	if err := processingSem.Acquire(ctx, 1); err != nil {
 		log.WithError(err).Warn("failed to acquire master refresh worker")
-		writeJSON(rw, http.StatusGatewayTimeout, map[string]string{"error": "timeout acquiring worker"})
+		writeJSON(rw, http.StatusGatewayTimeout, false)
 		return
 	}
 	defer processingSem.Release(1)
@@ -67,27 +76,16 @@ func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) 
 				code = http.StatusInternalServerError
 			}
 			// ierrors carry more specific HTTP codes (e.g., 404) when available.
-			writeJSON(rw, code, map[string]string{"error": ierr.Error()})
+			writeJSON(rw, code, false)
 			return
 		}
-		writeJSON(rw, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		log.WithError(err).Error("master refresh failed")
+		writeJSON(rw, http.StatusInternalServerError, false)
 		return
 	}
-	bytes := len(resultData.Data)
-	format := resultData.Type.String()
-	wStr := resultData.Headers["X-Result-Width"]
-	hStr := resultData.Headers["X-Result-Height"]
+
 	resultData.Close()
 
-	resp := refreshResp{
-		Status:      "updated",
-		Path:        path,
-		Format:      format,
-		Width:       wStr,
-		Height:      hStr,
-		Bytes:       bytes,
-		ProcessedAt: time.Now().UTC().Format(time.RFC3339),
-	}
-	writeJSON(rw, http.StatusOK, resp)
+	writeJSON(rw, http.StatusOK, true)
 
 }
