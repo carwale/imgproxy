@@ -28,6 +28,7 @@ import (
 	"github.com/imgproxy/imgproxy/v3/router"
 	"github.com/imgproxy/imgproxy/v3/security"
 	"github.com/imgproxy/imgproxy/v3/svg"
+	"github.com/imgproxy/imgproxy/v3/utils"
 	"github.com/imgproxy/imgproxy/v3/vips"
 )
 
@@ -36,6 +37,11 @@ var (
 	processingSem *semaphore.Weighted
 
 	headerVaryValue string
+)
+
+var (
+	originalBucket = utils.GetFromEnvOrDefault("IMGPROXY_ORIGINAL_BUCKET", "m-aeplimages")
+	masterBucket   = utils.GetFromEnvOrDefault("IMGPROXY_MASTER_BUCKET", "m-aeplimagesmaster-v2")
 )
 
 func initProcessingHandler() {
@@ -285,6 +291,8 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 
 	statusCode := http.StatusOK
 
+	masterObjectURI := "s3://" + masterBucket + "/" + imageURL
+
 	originData, err := func() (*imagedata.ImageData, error) {
 		defer metrics.StartDownloadingSegment(ctx)()
 
@@ -298,7 +306,7 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 			checkErr(ctx, "download", err)
 		}
 
-		return imagedata.Download(ctx, fmt.Sprintf("s3://m-aeplimagesmaster-v2/%s", imageURL), "source image", downloadOpts, po.SecurityOptions)
+		return imagedata.Download(ctx, masterObjectURI, "source image", downloadOpts, po.SecurityOptions)
 	}()
 
 	if err != nil {
@@ -443,11 +451,14 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 	// Normalize the imageURL by removing the first path segment and prepending "0x0/"
 	if segments := strings.SplitN(imageURL, "/", 2); len(segments) == 2 {
 		imageURL = "0x0/" + segments[1]
-	} 
+	}
 
 	// Parse processing options
 	po, imageURL, err := options.ParsePathIPC(imageURL, nil, masterHeaders)
 	checkErr(ctx, "path_parsing", err)
+
+	originalObjectURI := "s3://" + originalBucket + "/" + imageURL
+	masterObjectURI := "s3://" + masterBucket + "/" + imageURL
 
 	originData, err := func() (*imagedata.ImageData, error) {
 		defer metrics.StartDownloadingSegment(ctx)()
@@ -457,18 +468,17 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 			CookieJar: nil,
 		}
 
-		return imagedata.Download(ctx, fmt.Sprintf("s3://m-aeplimages/%s", imageURL), "source image", downloadOpts, po.SecurityOptions)
+		return imagedata.Download(ctx, originalObjectURI, "source image", downloadOpts, po.SecurityOptions)
 	}()
 
-	
 	if err != nil {
 		return nil, err
 	}
-	
-	if originData.Type == imagetype.SVG  {
+
+	if originData.Type == imagetype.SVG {
 		return originData, nil
 	}
-	
+
 	defer originData.Close()
 
 	resultData, err := func() (*imagedata.ImageData, error) {
@@ -478,8 +488,7 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 
 	checkErr(ctx, "processing", err)
 
-	err = imagedata.Upload(ctx, fmt.Sprintf("s3://m-aeplimagesmaster-v2/%s", imageURL), "master image", resultData)
-
+	err = imagedata.Upload(ctx, masterObjectURI, "master image", resultData)
 
 	return resultData, err
 
