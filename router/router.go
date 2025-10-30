@@ -114,7 +114,6 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		reqID, _ = nanoid.New()
 	}
 
-
 	if req.Method == http.MethodGet {
 		if r.HealthHandler != nil {
 			for _, healthRoute := range r.healthRoutes {
@@ -126,11 +125,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		if req.URL.Path == r.faviconRoute {
-			// TODO: Add a real favicon maybe?
-			rw.Header().Set("Content-Type", "text/plain")
-			rw.WriteHeader(404)
-			// Write a single byte to make AWS Lambda happy
-			rw.Write([]byte{' '})
+			http.ServeFile(rw, req, "favicon.ico")
 			return
 		}
 	}
