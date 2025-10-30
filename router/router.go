@@ -125,7 +125,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		if req.URL.Path == r.faviconRoute {
-			http.ServeFile(rw, req, "favicon.ico")
+			serveFavicon(rw, req)
 			return
 		}
 	}
