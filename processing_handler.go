@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"slices"
 	"strconv"
 	"strings"
@@ -29,6 +28,7 @@ import (
 	"github.com/imgproxy/imgproxy/v3/router"
 	"github.com/imgproxy/imgproxy/v3/security"
 	"github.com/imgproxy/imgproxy/v3/svg"
+	"github.com/imgproxy/imgproxy/v3/utils"
 	"github.com/imgproxy/imgproxy/v3/vips"
 )
 
@@ -39,16 +39,9 @@ var (
 	headerVaryValue string
 )
 
-func envOrDefault(key, def string) string {
-    if v := strings.TrimSpace(os.Getenv(key)); v != "" {
-        return v
-    }
-    return def
-}
-
 var (
-    originalBucket = envOrDefault("IMGPROXY_ORIGINAL_BUCKET", "m-aeplimages")
-    masterBucket   = envOrDefault("IMGPROXY_MASTER_BUCKET",   "m-aeplimagesmaster-v2")
+	originalBucket = utils.GetFromEnvOrDefault("IMGPROXY_ORIGINAL_BUCKET", "m-aeplimages")
+	masterBucket   = utils.GetFromEnvOrDefault("IMGPROXY_MASTER_BUCKET", "m-aeplimagesmaster-v2")
 )
 
 func initProcessingHandler() {
@@ -456,7 +449,7 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 	// Normalize the imageURL by removing the first path segment and prepending "0x0/"
 	if segments := strings.SplitN(imageURL, "/", 2); len(segments) == 2 {
 		imageURL = "0x0/" + segments[1]
-	} 
+	}
 
 	// Parse processing options
 	po, imageURL, err := options.ParsePathIPC(imageURL, nil, masterHeaders)
@@ -473,15 +466,14 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 		return imagedata.Download(ctx, fmt.Sprintf("s3://%s/%s", originalBucket, imageURL), "source image", downloadOpts, po.SecurityOptions)
 	}()
 
-	
 	if err != nil {
 		return nil, err
 	}
-	
-	if originData.Type == imagetype.SVG  {
+
+	if originData.Type == imagetype.SVG {
 		return originData, nil
 	}
-	
+
 	defer originData.Close()
 
 	resultData, err := func() (*imagedata.ImageData, error) {
@@ -492,7 +484,6 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 	checkErr(ctx, "processing", err)
 
 	err = imagedata.Upload(ctx, fmt.Sprintf("s3://%s/%s", masterBucket, imageURL), "master image", resultData)
-
 
 	return resultData, err
 

@@ -9,12 +9,14 @@ import (
 	"time"
 
 	"github.com/imgproxy/imgproxy/v3/ierrors"
+	log "github.com/sirupsen/logrus"
 )
+
+const masterRefreshTimeout = 60 * time.Second
 
 type refreshResp struct {
 	Status      string `json:"status"`       // "updated"
 	Path        string `json:"path"`         // input path as you passed it
-	MasterKey   string `json:"master_key"`   // key used under the master bucket
 	Format      string `json:"format"`       // e.g. "avif", "jpeg"
 	Width       string `json:"width"`        // X-Result-Width
 	Height      string `json:"height"`       // X-Result-Height
@@ -25,10 +27,12 @@ type refreshResp struct {
 func writeJSON(w http.ResponseWriter, code int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_ = json.NewEncoder(w).Encode(v)
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		log.WithError(err).Error("failed to encode JSON response")
+	}
 }
 
-// GET /admin/master/refresh?path=<original-object-key-or-imgproxy-path>
+// GET /master/refresh?path=<original-object-key-or-imgproxy-path>
 func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) {
 
 	path := strings.TrimSpace(r.URL.Query().Get("path"))
@@ -44,13 +48,14 @@ func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) 
 
 	ctx := r.Context()
 	if err := processingSem.Acquire(ctx, 1); err != nil {
+		log.WithError(err).Warn("failed to acquire master refresh worker")
 		writeJSON(rw, http.StatusGatewayTimeout, map[string]string{"error": "timeout acquiring worker"})
 		return
 	}
 	defer processingSem.Release(1)
 
 	// Optional: hard deadline for the refresh itself
-	cctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	cctx, cancel := context.WithTimeout(ctx, masterRefreshTimeout)
 	defer cancel()
 
 	resultData, err := getAndCreateMasterImageData(cctx, normalized, http.Header{})
@@ -61,6 +66,7 @@ func handleRefreshMaster(reqID string, rw http.ResponseWriter, r *http.Request) 
 			if code == 0 {
 				code = http.StatusInternalServerError
 			}
+			// ierrors carry more specific HTTP codes (e.g., 404) when available.
 			writeJSON(rw, code, map[string]string{"error": ierr.Error()})
 			return
 		}

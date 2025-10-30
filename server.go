@@ -28,7 +28,7 @@ func buildRouter() *router.Router {
 	r.GET("/", handleLanding, true)
 	r.GET("", handleLanding, true)
 
-	r.GET("/admin/master/refresh", withMetrics(withPanicHandler(withCORS(handleRefreshMaster))), false)
+	r.GET("/master/refresh", withMetrics(withPanicHandler(withCORS(handleRefreshMaster))), false)
 	r.GET("/", withMetrics(withPanicHandler(withCORS(withSecret(handleProcessing)))), false)
 
 	r.HEAD("/", withCORS(handleHead), false)
