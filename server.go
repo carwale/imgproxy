@@ -26,12 +26,15 @@ func buildRouter() *router.Router {
 	r := router.New(config.PathPrefix)
 
 	r.GET("/", handleLanding, true)
+
 	r.GET("", handleLanding, true)
 
 	r.GET("/master/refresh", withMetrics(withPanicHandler(withCORS(handleRefreshMaster))), false)
+
 	r.GET("/", withMetrics(withPanicHandler(withCORS(withSecret(handleProcessing)))), false)
 
 	r.HEAD("/", withCORS(handleHead), false)
+	
 	r.OPTIONS("/", withCORS(handleHead), false)
 
 	r.HealthHandler = handleHealth
