@@ -291,6 +291,8 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 
 	statusCode := http.StatusOK
 
+	masterObjectURI := "s3://" + masterBucket + "/" + imageURL
+
 	originData, err := func() (*imagedata.ImageData, error) {
 		defer metrics.StartDownloadingSegment(ctx)()
 
@@ -304,7 +306,7 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 			checkErr(ctx, "download", err)
 		}
 
-		return imagedata.Download(ctx, fmt.Sprintf("s3://%s/%s", masterBucket, imageURL), "source image", downloadOpts, po.SecurityOptions)
+		return imagedata.Download(ctx, masterObjectURI, "source image", downloadOpts, po.SecurityOptions)
 	}()
 
 	if err != nil {
@@ -455,6 +457,9 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 	po, imageURL, err := options.ParsePathIPC(imageURL, nil, masterHeaders)
 	checkErr(ctx, "path_parsing", err)
 
+	originalObjectURI := "s3://" + originalBucket + "/" + imageURL
+	masterObjectURI := "s3://" + masterBucket + "/" + imageURL
+
 	originData, err := func() (*imagedata.ImageData, error) {
 		defer metrics.StartDownloadingSegment(ctx)()
 
@@ -463,7 +468,7 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 			CookieJar: nil,
 		}
 
-		return imagedata.Download(ctx, fmt.Sprintf("s3://%s/%s", originalBucket, imageURL), "source image", downloadOpts, po.SecurityOptions)
+		return imagedata.Download(ctx, originalObjectURI, "source image", downloadOpts, po.SecurityOptions)
 	}()
 
 	if err != nil {
@@ -483,7 +488,7 @@ func getAndCreateMasterImageData(ctx context.Context, imageURL string, imgReques
 
 	checkErr(ctx, "processing", err)
 
-	err = imagedata.Upload(ctx, fmt.Sprintf("s3://%s/%s", masterBucket, imageURL), "master image", resultData)
+	err = imagedata.Upload(ctx, masterObjectURI, "master image", resultData)
 
 	return resultData, err
 
