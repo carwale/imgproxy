@@ -23,6 +23,7 @@ import (
 var imgproxyIsRunningMsg = []byte("imgproxy is running")
 
 func buildRouter() *router.Router {
+	
 	r := router.New(config.PathPrefix)
 
 	r.GET("/", handleLanding, true)
