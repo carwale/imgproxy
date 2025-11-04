@@ -51,7 +51,6 @@ docker run --rm -p 5000:5000 \
 
 Notes:
 
-- Arguments use `:` internally; you can change the separator via `IMGPROXY_ARGUMENTS_SEPARATOR`.
 - Media paths are recognized by `IMGPROXY_MEDIA_PATH_PREFIXES` (default: `media/`, `dev/media/`, `staging/media/`) and automatically attach a max-source-resolution guard.
 
 ## Master image workflow
