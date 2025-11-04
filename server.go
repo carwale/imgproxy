@@ -214,7 +214,7 @@ func handleRobots(reqID string, rw http.ResponseWriter, r *http.Request) {
     const body = "User-agent: *\nAllow: /\n"
 
     rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
-    rw.Header().Set("Cache-Control", "max-age=86400, public")
+    rw.Header().Set("Cache-Control", "max-age=31536000, public")
     rw.WriteHeader(http.StatusOK)
     _, _ = rw.Write([]byte(body))
 
