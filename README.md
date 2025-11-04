@@ -26,8 +26,8 @@ If you’re familiar with upstream `imgproxy`, start with “What’s different?
 ```bash
 docker build -t imgproxy-fork .
 docker run --rm -p 5000:5000 \
-  -e IMGPROXY_ORIGINAL_BUCKET=m-aeplimages \
-  -e IMGPROXY_MASTER_BUCKET=m-aeplimagesmaster-v2 \
+  -e IMGPROXY_ORIGINAL_BUCKET=m-aeplimages-dev \
+  -e IMGPROXY_MASTER_BUCKET=m-aeplimagesmaster-v2-dev \
   -e AWS_REGION=ap-south-1 \
   imgproxy-fork
 ```
@@ -40,7 +40,7 @@ docker run --rm -p 5000:5000 \
 ## Request model (IPC URL format)
 
 - Path: `/{width}x{height}/{key...}`
-  - Example: `/300x200/media/cars/123.jpg`
+  - Example: `/300x200/n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png`
 - Query parameters (subset):
   - **qp**: quality (0–100). Example: `?qp=80`
   - **wm**: watermark type (1..3). Example: `?wm=2`
@@ -68,12 +68,12 @@ Notes:
 `POST /master/refresh` with JSON body:
 
 ```json
-{ "path": "media/cars/123.jpg" }
+{ "path": "n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png" }
 ```
 
 Behavior:
 
-- Normalizes to `0x0/media/cars/123.jpg` and re‑creates master.
+- Normalizes to `0x0/n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png` and re‑creates master.
 - Returns `200` with `true` on success. Returns specific 4xx/5xx when errors are known (e.g., 404 from original).
 - Timeout is ~60s per refresh; queued work respects concurrency limits.
 
@@ -182,25 +182,25 @@ Only commonly customized variables are listed here; see `config/config.go` for t
 ### Basic resize
 
 ```text
-/300x200/media/cars/123.jpg
+/300x200/n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png
 ```
 
 ### Change quality and output format
 
 ```text
-/800x600/media/cars/123.jpg?qp=75&fmt=13
+/800x600/n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png?qp=75&fmt=13
 ```
 
 ### Add watermark and artifact overlay
 
 ```text
-/642x361/media/editorial/cover.jpg?wm=2&art=5
+/642x361/n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png?wm=2&art=5
 ```
 
 ### Fit instead of fill‑down and sharpen
 
 ```text
-/1200x800/media/cars/hero.jpg?fit=1&sh=1
+/1200x800/n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png?fit=1&sh=1
 ```
 
 ### Force refresh master
@@ -208,7 +208,7 @@ Only commonly customized variables are listed here; see `config/config.go` for t
 ```bash
 curl -X POST http://localhost:5000/master/refresh \
   -H 'Content-Type: application/json' \
-  -d '{"path":"media/cars/123.jpg"}'
+  -d '{"path":"n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png"}'
 ```
 
 ## Building locally
