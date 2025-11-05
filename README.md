@@ -76,17 +76,27 @@ Behavior:
 - Returns `200` with `true` on success. Returns specific 4xx/5xx when errors are known (e.g., 404 from original).
 - Timeout is ~60s per refresh; queued work respects concurrency limits.
 
-## Watermarks and artifacts
+## Watermark
 
-Preloaded on startup from the URIs configured in the environment.
+| Watermark Value | Image                                                                                |
+| --------------- | ------------------------------------------------------------------------------------ |
+| 1               | ![carwale watermark](http://imgd.aeplcdn.com/0x0/watermarks/cw_watermark.png)        |
+| 2               | ![bikewale watermark](http://imgd.aeplcdn.com/0x0/watermarks/bw_watermark.png)       |
+| 3               | ![bikewale watermark v2](http://imgd.aeplcdn.com/0x0/watermarks/bw_watermark_v2.png) |
 
-- Watermarks
-  - Types: `1` (color), `2` (BW), `3` (BW v2)
-  - Enable per request: `?wm=1` (position, opacity, scaling are sensible defaults in code)
-- Artifacts
-  - Types: `1..9` mapped to configured S3 path patterns containing `*` placeholder for size.
-  - Size is inferred from `{width}x{height}` in the URL; if a size asset is missing, artifact is skipped.
-  - Enable per request: `?art=5`
+## Artifact
+
+| Artifact Value | Image                                                                                                  | Valid Sizes                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| 1              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/editorial_template.png" width="120" height="60">       | "642x336"                                                                                       |
+| 2              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/editorial_template_bw.png" width="120" height="60">    | "642x336"                                                                                       |
+| 3              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/ios_ad_template.png" width="120" height="60">          | "642x361"                                                                                       |
+| 4              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/android_ad_template.png" width="120" height="60">      | "559x314"                                                                                       |
+| 5              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/bs6.png" width="120" height="60">                      | "110x61", "160x89", "272x153", "393x221", "476x268", "559x314", "600x337", "642x361", "762x429" |
+| 6              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/bs6_without_tooltip.png" width="120" height="60">      | "110x61", "160x89", "272x153", "393x221", "476x268", "559x314", "600x337", "642x361", "762x429" |
+| 7              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/bs6_without_tooltip_v1.png" width="120" height="60">   | "110x61", "160x89", "272x153", "393x221", "476x268", "559x314", "600x337", "642x361", "762x429" |
+| 8              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/mobility_template.png" width="120" height="60">        | "642x336"                                                                                       |
+| 9              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/editorial_template_bw_v2.png" width="120" height="60"> | "642x336"                                                                                       |
 
 Configure sources via `IMGPROXY_WATERMARK_PATHS`, `IMGPROXY_ARTIFACTS`, and `IMGPROXY_ARTIFACTS_SIZES_MAP` (see Environment).
 
@@ -201,28 +211,6 @@ Only commonly customized variables are listed here; see `config/config.go` for t
 ```text
 /1200x800/n/cw/ec/159099/swift-exterior-right-front-three-quarter-31.png?fit=1&sh=1
 ```
-
-## Watermark
-
-| Watermark Value | Image                                                                                |
-| --------------- | ------------------------------------------------------------------------------------ |
-| 1               | ![carwale watermark](http://imgd.aeplcdn.com/0x0/watermarks/cw_watermark.png)        |
-| 2               | ![bikewale watermark](http://imgd.aeplcdn.com/0x0/watermarks/bw_watermark.png)       |
-| 3               | ![bikewale watermark v2](http://imgd.aeplcdn.com/0x0/watermarks/bw_watermark_v2.png) |
-
-## Artifact
-
-| Artifact Value | Image                                                                                                  | Valid Sizes                                                                                     |
-| -------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| 1              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/editorial_template.png" width="120" height="60">       | "642x336"                                                                                       |
-| 2              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/editorial_template_bw.png" width="120" height="60">    | "642x336"                                                                                       |
-| 3              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/ios_ad_template.png" width="120" height="60">          | "642x361"                                                                                       |
-| 4              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/android_ad_template.png" width="120" height="60">      | "559x314"                                                                                       |
-| 5              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/bs6.png" width="120" height="60">                      | "110x61", "160x89", "272x153", "393x221", "476x268", "559x314", "600x337", "642x361", "762x429" |
-| 6              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/bs6_without_tooltip.png" width="120" height="60">      | "110x61", "160x89", "272x153", "393x221", "476x268", "559x314", "600x337", "642x361", "762x429" |
-| 7              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/bs6_without_tooltip_v1.png" width="120" height="60">   | "110x61", "160x89", "272x153", "393x221", "476x268", "559x314", "600x337", "642x361", "762x429" |
-| 8              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/mobility_template.png" width="120" height="60">        | "642x336"                                                                                       |
-| 9              | <img src="http://imgd.aeplcdn.com/0x0/artifacts/editorial_template_bw_v2.png" width="120" height="60"> | "642x336"                                                                                       |
 
 ### Force refresh master
 
