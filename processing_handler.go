@@ -88,14 +88,6 @@ func adjustQualityForMaster(po *options.ProcessingOptions, masterType imagetype.
 			po.Quality = scaled
 		}
 	}
-
-	if po.FormatQuality == nil {
-		return
-	}
-
-	if existing, ok := po.FormatQuality[masterType]; !ok || existing == 0 || existing > masterQuality {
-		po.FormatQuality[masterType] = masterQuality
-	}
 }
 
 func setCacheControl(rw http.ResponseWriter, force *time.Time, originHeaders map[string]string) {
