@@ -29,6 +29,8 @@ func buildRouter() *router.Router {
 	r.GET("/", handleLanding, true)
 
 	r.GET("", handleLanding, true)
+	
+	r.GET("/robots.txt", handleRobots, true)
 
 	r.POST("/master/refresh", withMetrics(withPanicHandler(withCORS(handleRefreshMaster))), false)
 
@@ -206,4 +208,15 @@ func handleHealth(reqID string, rw http.ResponseWriter, r *http.Request) {
 func handleHead(reqID string, rw http.ResponseWriter, r *http.Request) {
 	router.LogResponse(reqID, r, 200, nil)
 	rw.WriteHeader(200)
+}
+
+func handleRobots(reqID string, rw http.ResponseWriter, r *http.Request) {
+    const body = "User-agent: *\nAllow: /\n"
+
+    rw.Header().Set("Content-Type", "text/plain; charset=utf-8")
+    rw.Header().Set("Cache-Control", "max-age=31536000, public")
+    rw.WriteHeader(http.StatusOK)
+    _, _ = rw.Write([]byte(body))
+
+    router.LogResponse(reqID, r, http.StatusOK, nil)
 }
