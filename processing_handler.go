@@ -70,23 +70,11 @@ func adjustQualityForMaster(po *options.ProcessingOptions, masterType imagetype.
 		masterQuality = config.Quality
 	}
 
-	requestedQuality := po.Quality
-	logFields := log.Fields{
-		"master_type":       masterType.String(),
-		"master_quality":    masterQuality,
-		"requested_quality": requestedQuality,
-	}
-
 	if masterQuality <= 0 {
-		log.WithFields(logFields).Warn("Skipping master quality adjustment: master quality is undefined")
 		return
 	}
 
 	if po.Quality > 0 {
-		if po.Quality == requestedQuality {
-			log.WithFields(logFields).Debug("Adjusting quality for master response")
-		}
-
 		if po.Quality >= 100 {
 			po.Quality = masterQuality
 		} else {
@@ -99,11 +87,6 @@ func adjustQualityForMaster(po *options.ProcessingOptions, masterType imagetype.
 			}
 			po.Quality = scaled
 		}
-
-		logFields["scaled_quality"] = po.Quality
-		log.WithFields(logFields).Info("Master quality adjustment applied")
-	} else {
-		log.WithFields(logFields).Debug("Skipping master quality adjustment: no explicit quality requested")
 	}
 
 	if po.FormatQuality == nil {
@@ -430,12 +413,6 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 	checkErr(ctx, "timeout", router.CheckTimeout(ctx))
 
 	if fromMaster {
-		log.WithFields(log.Fields{
-			"image_url":       imageURL,
-			"request_quality": po.Quality,
-			"po_format":       po.Format.String(),
-			"origin_type":     originData.Type.String(),
-		}).Info("Serving from master; adjusting output quality")
 		adjustQualityForMaster(po, originData.Type)
 	}
 
