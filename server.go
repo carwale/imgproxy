@@ -111,6 +111,8 @@ func withCORS(h router.RouteHandler) router.RouteHandler {
 		if len(config.AllowOrigin) > 0 {
 			rw.Header().Set("Access-Control-Allow-Origin", config.AllowOrigin)
 			rw.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+			rw.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+			rw.Header().Set("Access-Control-Max-Age", "86400")
 		}
 
 		h(reqID, rw, r)
