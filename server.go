@@ -212,6 +212,10 @@ func handleHead(reqID string, rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(200)
 }
 
+func handleLanding(reqID string, rw http.ResponseWriter, r *http.Request) {
+	serveFavicon(rw, r)
+}
+
 func handleRobots(reqID string, rw http.ResponseWriter, r *http.Request) {
     const body = "User-agent: *\nAllow: /\n"
 
