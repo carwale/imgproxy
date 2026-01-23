@@ -213,7 +213,7 @@ func handleHead(reqID string, rw http.ResponseWriter, r *http.Request) {
 }
 
 func handleLanding(reqID string, rw http.ResponseWriter, r *http.Request) {
-	serveFavicon(rw, r)
+	router.ServeFavicon(rw, r)
 }
 
 func handleRobots(reqID string, rw http.ResponseWriter, r *http.Request) {

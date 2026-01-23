@@ -12,7 +12,7 @@ var faviconContent []byte
 
 var faviconModTime = time.Unix(0, 0)
 
-func serveFavicon(rw http.ResponseWriter, req *http.Request) {
+func ServeFavicon(rw http.ResponseWriter, req *http.Request) {
 	if len(faviconContent) == 0 {
 		http.NotFound(rw, req)
 		return
