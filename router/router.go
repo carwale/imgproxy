@@ -129,7 +129,7 @@ func (r *Router) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		}
 
 		if req.URL.Path == r.faviconRoute {
-			serveFavicon(rw, req)
+			ServeFavicon(rw, req)
 			return
 		}
 	}
