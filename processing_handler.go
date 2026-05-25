@@ -64,6 +64,32 @@ func initProcessingHandler() {
 	headerVaryValue = strings.Join(vary, ", ")
 }
 
+func adjustQualityForMaster(po *options.ProcessingOptions, masterType imagetype.Type) {
+	masterQuality := config.FormatQuality[masterType]
+	if masterQuality <= 0 {
+		masterQuality = config.Quality
+	}
+
+	if masterQuality <= 0 {
+		return
+	}
+
+	if po.Quality > 0 {
+		if po.Quality >= 100 {
+			po.Quality = masterQuality
+		} else {
+			scaled := (masterQuality*po.Quality + 50) / 100
+			if scaled < 1 {
+				scaled = 1
+			}
+			if scaled > masterQuality {
+				scaled = masterQuality
+			}
+			po.Quality = scaled
+		}
+	}
+}
+
 func setCacheControl(rw http.ResponseWriter, force *time.Time, originHeaders map[string]string) {
 	ttl := -1
 
@@ -293,6 +319,8 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 
 	masterObjectURI := "s3://" + masterBucket + "/" + imageURL
 
+	fromMaster := true
+
 	originData, err := func() (*imagedata.ImageData, error) {
 		defer metrics.StartDownloadingSegment(ctx)()
 
@@ -357,6 +385,7 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 			statusCode = ierr.StatusCode()
 		}
 
+		fromMaster = false
 		originData = imagedata.FallbackImage
 	}
 
@@ -374,6 +403,10 @@ func handleProcessing(reqID string, rw http.ResponseWriter, r *http.Request) {
 	}
 
 	checkErr(ctx, "timeout", router.CheckTimeout(ctx))
+
+	if fromMaster {
+		adjustQualityForMaster(po, originData.Type)
+	}
 
 	// Skip processing svg with unknown or the same destination imageType
 	// if it's not forced by AlwaysRasterizeSvg option
